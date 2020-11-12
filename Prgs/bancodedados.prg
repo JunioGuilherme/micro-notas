@@ -6,13 +6,11 @@ define class sql as Custom
 		this.SGBD = sqlstringconnect("DRIVER={MySQL ODBC 5.1 Driver};database=micronotas;SERVER=localhost;UID=root;PWD=1234;PORT=3306;OPTION=2051;")
 	endproc
 
-	procedure executar(lcQrySql,lcNomeCursor as String) as String
+	procedure executar(lcQrySql,lcNomeCursor as String)
 	
 		if empty(lcNomeCursor)
 			lcNomeCursor = "cCursor"
 		endif
-
-		_cliptext = lcQrySql
 		
 		lnVerifica = sqlexec(this.SGBD,lcQrySql,lcNomeCursor) && verifica se é valido
 		

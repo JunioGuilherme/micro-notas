@@ -12,6 +12,7 @@ set procedure to BancoDeDados additive
 set procedure to Notas additive
 set procedure to usuarios additive
 set procedure to historico additive
+oValidarAcesso = createobject("validarAcesso")
 
 && se for ambiante dev esse só executa até aqui
 if version(2) != 0
@@ -32,7 +33,7 @@ _screen.BorderStyle = 1
 
 
 && Abre menus
-_screen.AddObject("MenuInicial","inicial")
+_screen.AddObject("MenuInicial","mInicial")
 _screen.AddObject("MenuNotas","mNotas")
 _screen.AddObject("MenuSistema","mSistema")
 oValidarAcesso = createobject("validarAcesso")
@@ -47,7 +48,6 @@ set talk off
 set status bar off
 set exclusive off
 
-do foxypreviewer.app
 do form acesso
 
 on shutdown quit

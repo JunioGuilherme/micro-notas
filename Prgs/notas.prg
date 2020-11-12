@@ -32,7 +32,7 @@ define class Notas as Custom
 	endfunc
 	
 	
-	procedure consultarNotas as String
+	procedure consultarNotas
 		
 		oSql = newObject("sql","bancodedados.prg")
 		oSql.executar("select valorMin, valorMax, papel, idUsuario from usuarios where idUsuario = ?oValidarAcesso.getUsuarioId() ","cFiltroValoresUsuarios")			
@@ -53,7 +53,7 @@ define class Notas as Custom
 		
 		
 		else  && aprovações
-			oSql.executar(" SELECT dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, idNota, aprovacoes, qtdAprovacoes"+;
+			oSql.executar(" SELECT notas.codigo, dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, idNota, aprovacoes, qtdAprovacoes"+;
 		   			  	  " FROM notas"+;
 					      " INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa"+;
 					      " WHERE faixas.aprovacoes > 0"+;
@@ -66,7 +66,7 @@ define class Notas as Custom
 	
 	endproc
 	
-	procedure mudaStatus as String
+	procedure mudaStatus
 		
 		if reccount("cConsultarNotas")=0
 			cancel
@@ -121,3 +121,110 @@ define class Notas as Custom
 	endproc
 	
 enddefine
+
+define class NotaOperacoes as Custom 
+
+	hidden notaData
+	hidden notaValor
+	hidden notaDesconto
+	hidden notaFrete
+	hidden notaTotal
+	
+	&& Setters
+	function setUsuarioNome(lcNotaData as String) as String
+		this.usuarioNome = alltrim(lcUsuarioNome)
+	endfunc
+	
+	function setUsuarioSenha(lcUsuarioSenha as String) as String
+		this.usuarioSenha = chrtran(hash(lcUsuarioSenha),['"],[a])
+	endfunc
+	
+	function setUsuarioPapel(lcUsuarioPapel as String) as String
+		this.usuarioPapel = alltrim(lcUsuarioPapel)
+	endfunc
+	
+	function setUsuarioValorMin(lcUsuarioValorMin as String) as String
+		this.usuarioValorMin = lcUsuarioValorMin
+	endfunc
+	
+	function setUsuarioValorMax(lcUsuarioValorMax as String) as String
+		this.usuarioValorMax = lcUsuarioValorMax
+	endfunc
+	
+	function setUsuarioAdmin(lcUsuarioAdmin as String) as String
+		this.usuarioAdmin = lcUsuarioAdmin
+	endfunc
+
+	
+	procedure listarUsuarios
+		oSql = newObject("sql","bancodedados.prg")
+		oSql.executar("select codigo, trim(nome) as nome, papel, valorMin, valorMax, idUsuario, admin, senha from usuarios where idUsuario != ?oValidarAcesso.getUsuarioID() ","cListarUsuarios")
+	endproc 
+	
+	procedure editarUsuario
+		
+		if empty(this.usuarioSenha)
+			this.usuarioSenha = cListarUsuarios.senha
+		endif	
+		
+		text to lcComandoSql textmerge noshow
+			
+		UPDATE usuarios SET nome = '<<this.usuarioNome>>', senha = '<<this.usuarioSenha>>', papel = '<<this.usuarioPapel>>',
+		valorMin = '<<this.usuarioValorMin>>', valorMax = '<<this.usuarioValorMax>>', dataModi = now(), 
+		admin = '<<this.usuarioAdmin>>' WHERE idUsuario = '<<cListarUsuarios.idUsuario>>'
+		
+		endtext
+		
+		oSql = newObject("sql","bancodedados.prg")
+		oSql.executar(lcComandoSql)	
+		messagebox("Dados Atualizados",64,_screen.caption)
+	endproc
+	
+	procedure cadastrarUsuario
+		
+		if empty(this.usuarioSenha)
+			messagebox("Informe uma senha",48,_screen.Caption)
+			return .f.
+		endif
+		
+		locate for alltrim(cListarUsuarios.nome) == alltrim(this.usuarioNome)
+		if found()
+			messagebox("Já existe um usuário com esse login/nome",48,_screen.Caption)
+			return .f.
+		endif	
+		
+		text to lcComandoSql textmerge noshow
+			
+		INSERT INTO usuarios (idUsuario, nome, senha, papel, valorMin, valorMax, dataCria, dataModi, admin) 
+		VALUES ('<<sys(2015)>>','<<this.usuarioNome>>','<<this.usuarioSenha>>', 
+		'<<this.usuarioPapel>>','<<this.usuarioValorMin>>','<<this.usuarioValorMax>>', now(), now(), '<<this.usuarioAdmin>>') 
+		
+		endtext
+	
+		oSql = newObject("sql","bancodedados.prg")
+		oSql.executar(lcComandoSql)	
+	
+		messagebox("Cliente Cadastrado com sucesso",64,_screen.caption)
+	
+	endproc
+	
+	procedure excluirUsuario
+		
+		if messagebox("Confirma a exlusão desse registor ? ",32+4+256,_screen.Caption) != 6
+			return
+		endif	
+		oSql = newObject("sql","bancodedados.prg")
+		oSql.executar("DELETE FROM usuarios WHERE idUsuario = ?cListarUsuarios.idUsuario" ,"cListarUsuarios")
+	
+	endproc
+
+	procedure limparMemoria
+		
+		if used("cListarUsuarios")
+			use in cListarUsuarios	
+		endif	
+	
+	endproc
+
+enddefine
+
