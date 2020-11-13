@@ -1,3 +1,8 @@
+&& se for ambiante dev esse só executa até aqui
+if version(2) != 0
+	return
+endif	
+
 && seta paths
 set default to sys(5)+"\micronotas"
 set path to sys(5)+curdir()+"menus"   additive
@@ -12,12 +17,6 @@ set procedure to BancoDeDados additive
 set procedure to Notas additive
 set procedure to usuarios additive
 set procedure to historico additive
-oValidarAcesso = createobject("validarAcesso")
-
-&& se for ambiante dev esse só executa até aqui
-if version(2) != 0
-	return
-endif	
 set classlib to menus additive
 
 && tela principal
@@ -30,7 +29,6 @@ _screen.BorderStyle = 3
 _screen.MaxButton = .t.
 _screen.Closable = .t.
 _screen.BorderStyle = 1
-
 
 && Abre menus
 _screen.AddObject("MenuInicial","mInicial")

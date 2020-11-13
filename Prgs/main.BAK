@@ -48,7 +48,6 @@ set talk off
 set status bar off
 set exclusive off
 
-do foxypreviewer.app
 do form acesso
 
 on shutdown quit

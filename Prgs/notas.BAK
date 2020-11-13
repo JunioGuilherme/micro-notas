@@ -1,9 +1,13 @@
 define class Notas as Custom
 	
-	hidden papelUsuario
 	hidden dataEmissaoNota
+	hidden valorMercadoria 
+	hidden valorDesconto
+	hidden valorFrete
+	hidden valorTotal
+	hidden dataEmissao
 	
-	procedure init && Construtor
+	procedure init
 		this.dataEmissaoNota = "%"
 	endproc
 	
@@ -21,73 +25,102 @@ define class Notas as Custom
 		endif	
 	endfunc
 	
-
-	&& Getters
-	function getPapelUsuario
-		return this.PapelUsuario
+	function setValorMercadoria(lcValorMercadoria )
+		this.valorMercadoria = lcValorMercadoria
 	endfunc
 	
+	function setValorDesconto(lcValorDesconto)
+		if empty(lcValorDesconto)
+			lcValorDesconto	= '0'
+		endif
+		this.valorDesconto = lcValorDesconto
+	endfunc
+	
+	function setValorFrete(lcValorFrete)
+		if empty(lcValorFrete)
+			lcValorFrete = '0'
+		endif
+		this.valorFrete = lcValorFrete
+	endfunc
+
+	function setValorTotal(lcValorTotal)
+		lcValorTotal = this.valorMercadoria + this.valorFrete
+		lcValorTotal = lcValorTotal - this.ValorDesconto
+		this.valorTotal = lcValorTotal
+	endfunc
+	
+	function setDataEmissao(lcDataEmissao)
+		this.dataEmissao = lcDataEmissao
+	endfunc
+	
+	
+	&& Getters
 	function getDataEmissaoNota
 		return this.dataEmissaoNota
 	endfunc
 	
-	
-	procedure consultarNotas
+	procedure ListarNotas && Regras para mostrar conforme o teste
 		
 		oSql = newObject("sql","bancodedados.prg")
 		oSql.executar("select valorMin, valorMax, papel, idUsuario from usuarios where idUsuario = ?oValidarAcesso.getUsuarioId() ","cFiltroValoresUsuarios")			
-		
-		
 		lcDataEmissaoNota = this.DataEmissaoNota
 		
-		if cFiltroValoresUsuarios.papel = "visto"
-			oSql.executar(" SELECT dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, vistos, idNota, qtdVistos "+;
-		   			 	  " FROM notas "+;
-					      " INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa "+;
-					      " WHERE faixas.vistos > 0 "+;
-					      " AND faixas.vistos > notas.qtdVistos "+;
-					      " AND idNota NOT IN (SELECT idNota FROM historico WHERE idUsuario = ?cFiltroValoresUsuarios.idUsuario) "+;
-					      " AND valortotal BETWEEN ?cFiltroValoresUsuarios.ValorMin and ?cFiltroValoresUsuarios.ValorMax and status = 0 "+;
-					      " AND dataEmissao like ?lcDataEmissaoNota ", "cConsultarNotas")
+		if cFiltroValoresUsuarios.papel = "visto"				
+			text to lcComandoSql textmerge noshow
 				
+				SELECT notas.codigo as codigo ,dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, vistos, idNota, qtdVistos
+		   		FROM notas
+				INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa
+				WHERE faixas.vistos > 0
+				AND faixas.vistos > notas.qtdVistos
+				AND idNota NOT IN (SELECT idNota FROM historico WHERE idUsuario = '<<cFiltroValoresUsuarios.idUsuario)>>')
+				AND valortotal BETWEEN '<<cFiltroValoresUsuarios.ValorMin>>' and '<<cFiltroValoresUsuarios.ValorMax>>' and status = 0
+				AND dataEmissao like '<<lcDataEmissaoNota>>'
+		
+			endtext
+			oSql.executar(lcComandoSql,"cListarNotas")
 		
 		
 		else  && aprovações
-			oSql.executar(" SELECT notas.codigo, dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, idNota, aprovacoes, qtdAprovacoes"+;
-		   			  	  " FROM notas"+;
-					      " INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa"+;
-					      " WHERE faixas.aprovacoes > 0"+;
-					      " AND faixas.vistos >= notas.qtdVistos "+;
-					      " AND idNota NOT IN (SELECT idNota FROM historico WHERE idUsuario = ?cFiltroValoresUsuarios.idUsuario)"+;
-					      " and valortotal BETWEEN ?cFiltroValoresUsuarios.ValorMin and ?cFiltroValoresUsuarios.ValorMax and status = 0"+;
-					      " AND dataEmissao like ?lcDataEmissaoNota ", "cConsultarNotas")
+			text to lcComandoSql textmerge noshow
+			              
+	          SELECT notas.codigo as codigo, dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, idNota, aprovacoes, qtdAprovacoes
+	   		  FROM notas
+		      INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa
+		      WHERE faixas.aprovacoes > 0
+		      AND faixas.vistos >= notas.qtdVistos
+		      AND idNota NOT IN (SELECT idNota FROM historico WHERE idUsuario = '<<cFiltroValoresUsuarios.idUsuario>>')
+		      AND valortotal BETWEEN '<<cFiltroValoresUsuarios.ValorMin>>' AND '<<cFiltroValoresUsuarios.ValorMax>>' and status = 0
+		      AND dataEmissao like '<<lcDataEmissaoNota>>'
+		
+		
+			endtext
+			oSql.executar(lcComandoSql,"cListarNotas")
 		
 		endif		
 	
 	endproc
 	
-	procedure mudaStatus
+	procedure mudarStatusNota && Regras para mudar status comforme o teste
 		
-		if reccount("cConsultarNotas")=0
+		if reccount("cListarNotas")=0
 			cancel
 		else
 		endif
 		
 		oSql = newObject("sql","bancodedados.prg")
-		lcIdNotaAtual = cConsultarNotas.idNota		 
+		lcIdNotaAtual = cListarNotas.idNota		 
 		
-		if messagebox("Confirma o visto da nota selecionada?",4+32+256,_screen.Caption)!=7	
+		if messagebox("Confirma o Visto/Aprovação da nota selecionada?",4+32+256,_screen.Caption)!=7	
 			
 			if cFiltroValoresUsuarios.papel = "aprovacao"	
 				
-								
-				if  cConsultarNotas.aprovacoes - cConsultarNotas.qtdAprovacoes = 1
+				if  cListarNotas.aprovacoes - cListarNotas.qtdAprovacoes = 1
 					oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
 					              " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'aprovacao')")
 					
 					
 					oSql.executar(" UPDATE notas SET status = 1 WHERE idNota = ?lcIdNotaAtual ")	
-					
 					oSql.executar(" UPDATE notas SET qtdAprovacoes = qtdAprovacoes+1 WHERE idNota = ?lcIdNotaAtual ")
 				else
 					
@@ -99,11 +132,64 @@ define class Notas as Custom
 			else 
 				oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
 							  " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'visto') ")
-									
 				oSql.executar(" UPDATE notas SET qtdVistos = qtdVistos+1 WHERE idNota = ?lcIdNotaAtual ")
 								
 			endif
 		endif	
+	endproc
+	
+	procedure editarNota
+		
+		oSql = newObject("sql","bancodedados.prg")
+		
+		text to lcComandoSql textmerge noshow
+			SELECT idFaixa,MAX(faixaFim) AS faixa FROM faixas WHERE faixaFim >= '<<this.valorTotal>>'
+		endtext 
+		oSql.executar(lcComandoSql,"cFaixa")	
+		
+		text to lcComandoSql textmerge noshow
+		
+			UPDATE notas SET valorMercadoria = '<<this.valorMercadoria>>', valorDesconto = '<<this.valorDesconto>>', 
+			idFaixa = '<<cFaixa.idFaixa>>' ,valorFrete = '<<this.valorFrete>>', valorTotal = '<<this.valorTotal>>',
+			dataModi = now() WHERE idNota = '<<cListarNotas.idNota>>'
+		
+		endtext
+				
+		oSql.executar(lcComandoSql)	
+		messagebox("Dados Atualizados",64,_screen.caption)
+	
+	endproc
+	
+	procedure cadastrarNota
+				
+		oSql = newObject("sql","bancodedados.prg")
+		
+		text to lcComandoSql textmerge noshow
+			SELECT trim(idFaixa) as idFaixa,MAX(faixaFim) AS faixa FROM faixas WHERE faixaFim >= '<<this.valorTotal>>'
+		endtext 
+		oSql.executar(lcComandoSql,"cFaixa")	
+		
+		text to lcComandoSql textmerge noshow
+			
+			INSERT INTO notas (idNota ,idFaixa ,valorMercadoria ,valorDesconto ,valorFrete ,valorTotal ,status ,dataEmissao ,dataModi ,qtdVistos ,qtdAprovacoes) 
+			VALUES ('<<sys(2015)>>', '<<cFaixa.idFaixa>>', '<<this.valorMercadoria>>', '<<this.valorDesconto>>', '<<this.valorFrete>>', '<<this.valorTOtal>>', '0', now(), now(), '0', '0'); 
+		
+		endtext
+				
+		oSql.executar(lcComandoSql)	
+		messagebox("Dados Atualizados",64,_screen.caption)
+	
+	endproc
+	
+	
+	procedure excluirNota
+	
+		if messagebox("Confirma a exlusão desse registro ? ",32+4+256,_screen.Caption) != 6
+			return
+		endif	
+		oSql = newObject("sql","bancodedados.prg")
+		oSql.executar("DELETE FROM notas WHERE idNota = ?cListarNotas.idNota")
+	
 	endproc
 	
 	procedure limparMemoria as String
@@ -111,8 +197,10 @@ define class Notas as Custom
 		do case
 		case used("cFiltroValoresUsuarios")
 			use in cFiltroValoresUsuarios
-		case used("cConsultarNotas")
-			use in cConsultarNotas
+		case used("cListarNotas")
+			use in cListarNotas
+		case used("cFaixa")
+			use in cFaixa
 		case used("cCursor") && cursor padrão da classe
 			use in cCursor
 		endcase
@@ -120,112 +208,5 @@ define class Notas as Custom
 			
 	endproc
 	
-enddefine
-
-define class NotaOperacoes as Custom 
-
-	hidden usuarioNome
-	hidden usuarioSenha
-	hidden usuarioPapel
-	hidden usuarioValorMin
-	hidden usuarioValorMax
-	hidden usuarioAdmin  
-	
-	&& Setters
-	function setUsuarioNome(lcUsuarioNome as String) as String
-		this.usuarioNome = alltrim(lcUsuarioNome)
-	endfunc
-	
-	function setUsuarioSenha(lcUsuarioSenha as String) as String
-		this.usuarioSenha = chrtran(hash(lcUsuarioSenha),['"],[a])
-	endfunc
-	
-	function setUsuarioPapel(lcUsuarioPapel as String) as String
-		this.usuarioPapel = alltrim(lcUsuarioPapel)
-	endfunc
-	
-	function setUsuarioValorMin(lcUsuarioValorMin as String) as String
-		this.usuarioValorMin = lcUsuarioValorMin
-	endfunc
-	
-	function setUsuarioValorMax(lcUsuarioValorMax as String) as String
-		this.usuarioValorMax = lcUsuarioValorMax
-	endfunc
-	
-	function setUsuarioAdmin(lcUsuarioAdmin as String) as String
-		this.usuarioAdmin = lcUsuarioAdmin
-	endfunc
-
-	
-	procedure listarUsuarios
-		oSql = newObject("sql","bancodedados.prg")
-		oSql.executar("select codigo, trim(nome) as nome, papel, valorMin, valorMax, idUsuario, admin, senha from usuarios where idUsuario != ?oValidarAcesso.getUsuarioID() ","cListarUsuarios")
-	endproc 
-	
-	procedure editarUsuario
-		
-		if empty(this.usuarioSenha)
-			this.usuarioSenha = cListarUsuarios.senha
-		endif	
-		
-		text to lcComandoSql textmerge noshow
-			
-		UPDATE usuarios SET nome = '<<this.usuarioNome>>', senha = '<<this.usuarioSenha>>', papel = '<<this.usuarioPapel>>',
-		valorMin = '<<this.usuarioValorMin>>', valorMax = '<<this.usuarioValorMax>>', dataModi = now(), 
-		admin = '<<this.usuarioAdmin>>' WHERE idUsuario = '<<cListarUsuarios.idUsuario>>'
-		
-		endtext
-		
-		oSql = newObject("sql","bancodedados.prg")
-		oSql.executar(lcComandoSql)	
-		messagebox("Dados Atualizados",64,_screen.caption)
-	endproc
-	
-	procedure cadastrarUsuario
-		
-		if empty(this.usuarioSenha)
-			messagebox("Informe uma senha",48,_screen.Caption)
-			return .f.
-		endif
-		
-		locate for alltrim(cListarUsuarios.nome) == alltrim(this.usuarioNome)
-		if found()
-			messagebox("Já existe um usuário com esse login/nome",48,_screen.Caption)
-			return .f.
-		endif	
-		
-		text to lcComandoSql textmerge noshow
-			
-		INSERT INTO usuarios (idUsuario, nome, senha, papel, valorMin, valorMax, dataCria, dataModi, admin) 
-		VALUES ('<<sys(2015)>>','<<this.usuarioNome>>','<<this.usuarioSenha>>', 
-		'<<this.usuarioPapel>>','<<this.usuarioValorMin>>','<<this.usuarioValorMax>>', now(), now(), '<<this.usuarioAdmin>>') 
-		
-		endtext
-	
-		oSql = newObject("sql","bancodedados.prg")
-		oSql.executar(lcComandoSql)	
-	
-		messagebox("Cliente Cadastrado com sucesso",64,_screen.caption)
-	
-	endproc
-	
-	procedure excluirUsuario
-		
-		if messagebox("Confirma a exlusão desse registor ? ",32+4+256,_screen.Caption) != 6
-			return
-		endif	
-		oSql = newObject("sql","bancodedados.prg")
-		oSql.executar("DELETE FROM usuarios WHERE idUsuario = ?cListarUsuarios.idUsuario" ,"cListarUsuarios")
-	
-	endproc
-
-	procedure limparMemoria
-		
-		if used("cListarUsuarios")
-			use in cListarUsuarios	
-		endif	
-	
-	endproc
-
 enddefine
 

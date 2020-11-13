@@ -12,6 +12,7 @@ define class sql as Custom
 			lcNomeCursor = "cCursor"
 		endif
 		
+		_cliptext = lcQrySql
 		lnVerifica = sqlexec(this.SGBD,lcQrySql,lcNomeCursor) && verifica se é valido
 		
 		if lnVerifica <= 0

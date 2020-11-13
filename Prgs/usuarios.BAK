@@ -22,11 +22,11 @@ define class ValidarAcesso as Custom
 	endfunc
 	
 	function setUsuarioCodigo(lcUsuarioCodigo as String) as String
-		this.usuarioCodigo = lcusUarioCodigo
+		this.usuarioCodigo = alltrim(lcusUarioCodigo)
 	endfunc
 	
 	function setUsuarioSenha(lcUsuarioSenha as String) as String
-		this.usuarioSenha = chrtran(hash(lcUsuarioSenha),['"],[a])
+		this.usuarioSenha = lcUsuarioSenha
 	endfunc
 	
 	function setUsuarioAdmin(lcUsuarioAdmin as String) as String
@@ -51,14 +51,14 @@ define class ValidarAcesso as Custom
 	endfunc
 
 	&& valida o login
-	function logado as Boolean
+	function logar as Boolean
 		
 		select("cUsuarios")
 		
 		locate for alltrim(cUsuarios.nome) == alltrim(this.usuarioNome);
 		or alltrim(str(cUsuarios.codigo)) == alltrim(this.usuarioCodigo)
 			
-		if found() and alltrim(cUsuarios.senha) == alltrim(this.usuarioSenha)
+		if found() and alltrim(cUsuarios.senha) = alltrim(this.usuarioSenha)
 			this.usuarioID = cUsuarios.idUsuario
 			this.usuarioAdmin = cUsuarios.Admin
 			return .t.
@@ -68,11 +68,23 @@ define class ValidarAcesso as Custom
 		
 	endfunc 
 	
+	procedure verificarAdmin
+	
+	if oValidarAcesso.getUsuarioAdmin()= 0
+		messagebox("Somente um administrador tem acesso a essa função",48,_screen.Caption)
+		return .f.
+	endif
+	
+	endproc
+	
+	
 	procedure limparMemoria 
 		
 		if used("cUsuarios")
 			use in cUsuarios
-		endif	
+		endif
+		
+	endproc		
 	
 enddefine
 
@@ -91,7 +103,7 @@ define class UsuarioOperacoes as Custom
 	endfunc
 	
 	function setUsuarioSenha(lcUsuarioSenha as String) as String
-		this.usuarioSenha = chrtran(hash(lcUsuarioSenha),['"],[a])
+		this.usuarioSenha = alltrim(lcUsuarioSenha)
 	endfunc
 	
 	function setUsuarioPapel(lcUsuarioPapel as String) as String
