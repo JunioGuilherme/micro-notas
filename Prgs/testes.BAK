@@ -1,6 +1,5 @@
 public oValidarAcesso
 
-set step on
 && seta paths
 set default to sys(5)+"\micronotas"
 set path to sys(5)+curdir()+"menus"   additive

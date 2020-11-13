@@ -17,6 +17,6 @@ set procedure to historico additive
 set classlib to menus additive
 
 oValidarAcesso = newObject("validarAcesso","usuarios.prg")
-oValidarAcesso.setUsuarioNome('adao')
-oValidarAcesso.setUsuarioSenha('a')
+oValidarAcesso.setUsuarioNome('amanda')
+oValidarAcesso.setUsuarioSenha('10')
 oValidarAcesso.logar()

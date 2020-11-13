@@ -68,7 +68,7 @@ define class ValidarAcesso as Custom
 		
 	endfunc 
 	
-	procedure verificarAdmin
+	procedure verificarAdmin as Boolean
 	
 	if oValidarAcesso.getUsuarioAdmin()= 0
 		messagebox("Somente um administrador tem acesso a essa função",48,_screen.Caption)

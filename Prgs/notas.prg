@@ -31,14 +31,14 @@ define class Notas as Custom
 	
 	function setValorDesconto(lcValorDesconto)
 		if empty(lcValorDesconto)
-			lcValorDesconto	= '0'
+			lcValorDesconto	= 0
 		endif
 		this.valorDesconto = lcValorDesconto
 	endfunc
 	
 	function setValorFrete(lcValorFrete)
 		if empty(lcValorFrete)
-			lcValorFrete = '0'
+			lcValorFrete = 0
 		endif
 		this.valorFrete = lcValorFrete
 	endfunc
@@ -68,7 +68,7 @@ define class Notas as Custom
 		if cFiltroValoresUsuarios.papel = "visto"				
 			text to lcComandoSql textmerge noshow
 				
-				SELECT notas.codigo as codigo ,dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, vistos, idNota, qtdVistos
+				SELECT notas.codigo as codigo ,dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, vistos, aprovacoes, idNota, qtdVistos
 		   		FROM notas
 				INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa
 				WHERE faixas.vistos > 0
@@ -84,11 +84,11 @@ define class Notas as Custom
 		else  && aprovações
 			text to lcComandoSql textmerge noshow
 			              
-	          SELECT notas.codigo as codigo, dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, idNota, aprovacoes, qtdAprovacoes
+	          SELECT notas.codigo as codigo, dataEmissao, valorMercadoria, valorDesconto, valorFrete, valorTotal, idNota, aprovacoes, vistos, qtdAprovacoes
 	   		  FROM notas
 		      INNER JOIN faixas ON faixas.idFaixa = notas.idFaixa
 		      WHERE faixas.aprovacoes > 0
-		      AND faixas.vistos >= notas.qtdVistos
+		      AND faixas.vistos = notas.qtdVistos
 		      AND idNota NOT IN (SELECT idNota FROM historico WHERE idUsuario = '<<cFiltroValoresUsuarios.idUsuario>>')
 		      AND valortotal BETWEEN '<<cFiltroValoresUsuarios.ValorMin>>' AND '<<cFiltroValoresUsuarios.ValorMax>>' and status = 0
 		      AND dataEmissao like '<<lcDataEmissaoNota>>'
@@ -115,7 +115,7 @@ define class Notas as Custom
 			
 			if cFiltroValoresUsuarios.papel = "aprovacao"	
 				
-				if  cListarNotas.aprovacoes - cListarNotas.qtdAprovacoes = 1
+				if  cListarNotas.aprovacoes - cListarNotas.qtdAprovacoes = 1 && verifica se precisa mudar satus
 					oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
 					              " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'aprovacao')")
 					
@@ -127,13 +127,24 @@ define class Notas as Custom
 					oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
 					              " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'aprovacao')")		              
 					
+					oSql.executar(" UPDATE notas SET qtdAprovacoes = qtdAprovacoes+1 WHERE idNota = ?lcIdNotaAtual ")	
+				
 				endif
 
 			else 
-				oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
-							  " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'visto') ")
-				oSql.executar(" UPDATE notas SET qtdVistos = qtdVistos+1 WHERE idNota = ?lcIdNotaAtual ")
-								
+				if cListarNotas.vistos - cListarNotas.qtdVistos = 1 and cListarNotas.aprovacoes = 0
+				
+					oSql.executar(" UPDATE notas SET status = 1 WHERE idNota = ?lcIdNotaAtual ")	
+					oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
+								  " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'visto') ")
+					oSql.executar(" UPDATE notas SET qtdVistos = qtdVistos+1 WHERE idNota = ?lcIdNotaAtual ")
+				else
+			
+					oSql.executar(" INSERT INTO historico (idHistorico, idNota, idUsuario, data, operacao) VALUES "+; 
+								  " (?sys(2015), ?lcIdNotaAtual, ?oValidarAcesso.getUsuarioId(), Now(), 'visto') ")
+					oSql.executar(" UPDATE notas SET qtdVistos = qtdVistos+1 WHERE idNota = ?lcIdNotaAtual ")
+				endif					
+			
 			endif
 		endif	
 	endproc

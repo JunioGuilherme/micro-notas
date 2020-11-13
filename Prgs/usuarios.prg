@@ -171,7 +171,7 @@ define class UsuarioOperacoes as Custom
 		oSql = newObject("sql","bancodedados.prg")
 		oSql.executar(lcComandoSql)	
 	
-		messagebox("Cliente Cadastrado com sucesso",64,_screen.caption)
+		messagebox("Usuário cadastrado com sucesso",64,_screen.caption)
 	
 	endproc
 	
