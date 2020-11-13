@@ -1,5 +1,3 @@
-public oValidarAcesso
-
 && seta paths
 set default to sys(5)+"\micronotas"
 set path to sys(5)+curdir()+"menus"   additive
@@ -15,8 +13,3 @@ set procedure to Notas additive
 set procedure to usuarios additive
 set procedure to historico additive
 set classlib to menus additive
-
-oValidarAcesso = newObject("validarAcesso","usuarios.prg")
-oValidarAcesso.setUsuarioNome('amanda')
-oValidarAcesso.setUsuarioSenha('10')
-oValidarAcesso.logar()

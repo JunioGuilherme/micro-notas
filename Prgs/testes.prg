@@ -7,7 +7,6 @@ set path to sys(5)+curdir()+"prgs"    additive
 set path to sys(5)+curdir()+"imagens" additive
 
 && Abre classes
-set library to vfpencryption additive
 set procedure to BancoDeDados additive
 set procedure to Notas additive
 set procedure to usuarios additive
